@@ -7,10 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import Image from 'next/image';
+import { Eye, EyeOff, Mail, Lock, Loader2, ChefHat } from 'lucide-react';
 
-export default function Login() {
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const router = useRouter();
@@ -79,61 +82,123 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Login</CardTitle>
-          <CardDescription>
-            Enter your email and password to access your account
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="p-3 bg-red-50 text-red-600 rounded-md text-sm">
-                {error}
+    <div className="min-h-screen flex">
+      {/* Left Side - Form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 lg:p-12">
+        <div className="max-w-md mx-auto w-full space-y-8">
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                <ChefHat className="h-6 w-6 text-amber-600" />
               </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
             </div>
-            <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-slate-900">Welcome Back</h1>
+            <p className="mt-2 text-slate-600">Sign in to your account to continue</p>
+          </div>
+
+          <Card className="p-6 shadow-md border-slate-200">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-slate-700">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10 border-slate-200"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-slate-700">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10 border-slate-200"
+                    placeholder="Enter your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                <Link 
+                  href="/forgot-password"
+                  className="text-sm text-amber-600 hover:text-amber-700"
+                >
                   Forgot password?
                 </Link>
               </div>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign in'}
-            </Button>
-            <div className="text-center text-sm">
-              Don't have an account?{' '}
-              <Link href="/register" className="text-blue-600 hover:underline">
-                Sign up
-              </Link>
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
+
+              <Button
+                type="submit"
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign in'
+                )}
+              </Button>
+            </form>
+          </Card>
+
+          <p className="text-center text-slate-600">
+            Don't have an account?{' '}
+            <Link 
+              href="/signup"
+              className="text-amber-600 hover:text-amber-700 font-medium"
+            >
+              Sign up
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      {/* Right Side - Image */}
+      <div className="hidden lg:block lg:w-1/2 relative">
+        <Image
+          src="/images/auth/login-bg.jpg"
+          alt="Cooking background"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/20 flex items-center justify-center p-12">
+          <div className="max-w-lg">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Discover & Share Amazing Recipes
+            </h2>
+            <p className="text-lg text-slate-200">
+              Join our community of food lovers and share your culinary creations with the world
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 } 

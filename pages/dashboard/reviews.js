@@ -3,12 +3,13 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Star, Trash2, Edit, Image as ImageIcon } from 'lucide-react';
+import { Star, Trash2, Edit, Image as ImageIcon, MessageSquare, Calendar, Utensils, Eye } from 'lucide-react';
 import { reviewsAPI } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
 import UserLayout from '@/components/layout/UserLayout';
 import { toast } from 'sonner';
+import { ArrowLeft, BookOpen, Search, ThumbsUp } from 'lucide-react';
 
 export default function ReviewsPage() {
   const { user } = useAuth();
@@ -102,92 +103,165 @@ export default function ReviewsPage() {
 
   return (
     <UserLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">My Reviews</h1>
-          <div className="flex items-center gap-2">
+      <div className="space-y-8 p-6 max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-amber-900">My Reviews</h1>
+            <p className="text-amber-600 mt-1">Track and manage your recipe reviews</p>
+          </div>
+          <div className="flex gap-3">
             <Link href="/dashboard">
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="border-amber-200 text-amber-700 hover:bg-amber-50"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Dashboard
               </Button>
             </Link>
             <Link href="/dashboard/recipes">
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                <BookOpen className="h-4 w-4 mr-2" />
                 Browse Recipes
               </Button>
             </Link>
           </div>
         </div>
 
-        {reviews.length === 0 ? (
-          <Card>
-            <CardContent className="py-12">
-              <div className="text-center">
-                <Star className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-lg font-medium text-gray-900">No reviews yet</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  You haven't written any reviews yet.
-                </p>
-                <div className="mt-6">
-                  <Link href="/dashboard/recipes">
-                    <Button>
-                      Browse Recipes
-                    </Button>
-                  </Link>
-                </div>
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100/50 border-none shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-amber-900 font-medium flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-amber-600" />
+                Total Reviews
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-amber-900">{reviews.length}</div>
+              <p className="text-amber-600 text-sm mt-1">reviews written</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100/50 border-none shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-amber-900 font-medium flex items-center gap-2">
+                <Star className="h-5 w-5 text-amber-600" />
+                Average Rating
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-amber-900">
+                {(reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length || 0).toFixed(1)}
               </div>
+              <p className="text-amber-600 text-sm mt-1">stars given</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100/50 border-none shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-amber-900 font-medium flex items-center gap-2">
+                <ThumbsUp className="h-5 w-5 text-amber-600" />
+                5-Star Reviews
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-amber-900">
+                {reviews.filter(review => review.rating === 5).length}
+              </div>
+              <p className="text-amber-600 text-sm mt-1">perfect ratings</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {reviews.length === 0 ? (
+          <Card className="border-amber-100 shadow-sm text-center">
+            <CardContent className="py-16">
+              <div className="mx-auto w-20 h-20 bg-gradient-to-br from-amber-50 to-amber-100 rounded-full flex items-center justify-center mb-6">
+                <Star className="h-10 w-10 text-amber-400" />
+              </div>
+              <h3 className="text-2xl font-semibold text-amber-900 mb-3">No Reviews Yet</h3>
+              <p className="text-amber-600 mb-8 max-w-md mx-auto">
+                Share your culinary experiences by reviewing recipes you've tried. Your feedback helps the community!
+              </p>
+              <Link href="/dashboard/recipes">
+                <Button className="bg-amber-600 hover:bg-amber-700 text-white">
+                  <Search className="h-4 w-4 mr-2" />
+                  Discover Recipes to Review
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-6">
             {reviews.map((review) => (
-              <Card key={review._id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
+              <Card key={review._id} className="border-amber-100 shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="border-b border-amber-100 bg-amber-50/50">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                       <Link href={`/dashboard/recipes/${review.recipe.slug}`}>
-                        <CardTitle className="hover:underline">{review.recipe.title}</CardTitle>
+                        <CardTitle className="text-amber-900 hover:text-amber-700 transition-colors flex items-center gap-2">
+                          <Utensils className="h-5 w-5" />
+                          {review.recipe.title}
+                        </CardTitle>
                       </Link>
-                      <CardDescription>
+                      <CardDescription className="flex items-center gap-2 text-amber-600">
+                        <Calendar className="h-4 w-4" />
                         {new Date(review.createdAt).toLocaleDateString()}
                       </CardDescription>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-1 bg-amber-100 px-4 py-2 rounded-full">
                       {renderStars(review.rating)}
+                      <span className="ml-2 font-medium text-amber-700">{review.rating}/5</span>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex gap-4">
-                    <div className="relative h-20 w-20 flex-shrink-0">
+                <CardContent className="pt-6">
+                  <div className="flex gap-6">
+                    <div className="relative h-28 w-28 flex-shrink-0">
                       {review.recipe.image ? (
                         <Image
                           src={getImageUrl(review.recipe.image)}
                           alt={review.recipe.title}
                           fill
-                          className="object-cover rounded-md"
+                          className="object-cover rounded-lg"
                           unoptimized
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
-                          <ImageIcon className="h-6 w-6 text-gray-400" />
+                        <div className="w-full h-full bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg flex items-center justify-center">
+                          <Utensils className="h-10 w-10 text-amber-400" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-gray-700">{review.comment}</p>
-                      <div className="mt-4 flex gap-2">
+                    <div className="flex-1 space-y-4">
+                      <div className="bg-amber-50/50 rounded-lg p-4">
+                        <div className="flex items-start gap-2">
+                          <MessageSquare className="h-4 w-4 text-amber-500 mt-1" />
+                          <p className="text-gray-700">{review.comment}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
                         <Link href={`/dashboard/recipes/${review.recipe.slug}`}>
-                          <Button variant="outline" size="sm">View Recipe</Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="border-amber-200 text-amber-700 hover:bg-amber-50"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Recipe
+                          </Button>
                         </Link>
                         <Button 
                           variant="ghost" 
                           size="sm"
                           onClick={() => handleDeleteReview(review._id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Review
                         </Button>
                       </div>
                     </div>

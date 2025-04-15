@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import { recipeAPI, categoryAPI, favoritesAPI } from '@/lib/api';
 import { toast } from 'sonner';
-import { Search, Eye, Heart, Clock, Users, Star, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Search, Eye, Heart, Clock, Users, Star, Plus, Pencil, Trash2, BookOpen, ChefHat, Utensils, FileText } from 'lucide-react';
 import RecipeImage from '@/components/user/RecipeImage';
 import RecipeViewModal from '@/components/user/RecipeViewModal';
 import RecipeEditModal from '@/components/user/RecipeEditModal';
@@ -260,187 +260,217 @@ export default function UserRecipesPage() {
 
   return (
     <UserLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Recipes</h1>
-          <Button variant="outline" onClick={() => router.push('/dashboard')}>
-            Back to Dashboard
-          </Button>
+      <div className="space-y-8 p-6 max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-amber-900">My Recipes</h1>
+            <p className="text-amber-600 mt-1">Manage and organize your culinary creations</p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              onClick={handleCreateRecipe}
+              className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Recipe
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => router.push('/dashboard')}
+              className="border-amber-200 text-amber-700 hover:bg-amber-50"
+            >
+              Back to Dashboard
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Recipes</CardTitle>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-none shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-amber-900 font-medium flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-amber-600" />
+                Total Recipes
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{recipes.length}</div>
+              <div className="text-3xl font-bold text-amber-900">{recipes.length}</div>
+              <p className="text-amber-600 text-sm mt-1">recipes in your collection</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Categories</CardTitle>
+          
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-none shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-amber-900 font-medium flex items-center gap-2">
+                <FileText className="h-5 w-5 text-amber-600" />
+                Categories
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{categories.length}</div>
+              <div className="text-3xl font-bold text-amber-900">{categories.length}</div>
+              <p className="text-amber-600 text-sm mt-1">recipe categories</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Favorites</CardTitle>
+
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-none shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-amber-900 font-medium flex items-center gap-2">
+                <Heart className="h-5 w-5 text-amber-600" />
+                Favorites
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{favorites.length}</div>
+              <div className="text-3xl font-bold text-amber-900">{favorites.length}</div>
+              <p className="text-amber-600 text-sm mt-1">favorite recipes</p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="flex items-center space-x-2">
+        {/* Search Section */}
+        <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-sm border border-amber-100">
+          <Search className="h-5 w-5 text-amber-500" />
           <Input
-            placeholder="Search recipes..."
+            placeholder="Search recipes by title or description..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
+            className="border-amber-200 focus:ring-amber-500 focus:border-amber-500"
           />
         </div>
 
-        {error && (
-          <div className="bg-red-50 text-red-500 p-4 rounded-md">
-            {error}
-          </div>
-        )}
-
-        {loading ? (
-          <div className="text-center py-8">Loading recipes...</div>
-        ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        {/* Recipes Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden">
+          <table className="min-w-full divide-y divide-amber-200">
+            <thead className="bg-amber-50">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">Image</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">Recipe Details</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">Category</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">Info</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-amber-800 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-amber-100">
+              {filteredRecipes.map((recipe) => (
+                <tr key={recipe._id} className="hover:bg-amber-50/50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="h-20 w-20 rounded-lg overflow-hidden">
+                      <RecipeImage image={recipe.image} className="h-full w-full object-cover" />
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-base font-medium text-amber-900 mb-1">{recipe.title}</div>
+                    <div className="text-sm text-amber-600 line-clamp-2">{recipe.description}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">
+                      {recipe.categoryName || 'Uncategorized'}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-2 text-sm text-amber-700">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>{recipe.prepTime || 0} min</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>{recipe.servings || 0} servings</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-amber-400" />
+                        <span>{recipe.rating?.toFixed(1) || 'No ratings'}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewRecipe(recipe)}
+                        className="text-amber-700 hover:text-amber-800 hover:bg-amber-100"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {recipe.author?._id === user?._id && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditRecipe(recipe)}
+                            className="text-amber-700 hover:text-amber-800 hover:bg-amber-100"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteRecipe(recipe)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        variant={recipe.isFavorite ? "ghost" : "ghost"}
+                        size="sm"
+                        onClick={() => handleToggleFavorite(recipe)}
+                        className={recipe.isFavorite ? "text-red-600 hover:text-red-700 hover:bg-red-50" : "text-amber-700 hover:text-amber-800 hover:bg-amber-100"}
+                      >
+                        <Heart className="h-4 w-4" fill={recipe.isFavorite ? "currentColor" : "none"} />
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredRecipes.map((recipe) => (
-                  <tr key={recipe._id || recipe.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <RecipeImage image={recipe.image} />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{recipe.title}</div>
-                      <div className="text-sm text-gray-500 line-clamp-2">{recipe.description}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant="outline">
-                        {recipe.categoryName || 'Uncategorized'}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1" />
-                          <span>{recipe.prepTime || 0} min</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Users className="h-4 w-4 mr-1" />
-                          <span>{recipe.servings || 0}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Star className="h-4 w-4 mr-1 text-yellow-400" />
-                          <span>{recipe.rating?.toFixed(1) || 'No ratings'}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewRecipe(recipe)}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View
-                        </Button>
-                        {recipe.author?._id === user?._id && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditRecipe(recipe)}
-                            >
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteRecipe(recipe)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          variant={recipe.isFavorite ? "destructive" : "default"}
-                          size="sm"
-                          onClick={() => handleToggleFavorite(recipe)}
-                        >
-                          <Heart className="h-4 w-4 mr-2" />
-                          {recipe.isFavorite ? 'Remove' : 'Add'}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
 
-        {filteredRecipes.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">No recipes found.</p>
-          </div>
-        )}
+          {filteredRecipes.length === 0 && (
+            <div className="text-center py-12 bg-amber-50/50">
+              <Utensils className="h-12 w-12 text-amber-300 mx-auto mb-3" />
+              <p className="text-amber-800 font-medium">No recipes found</p>
+              <p className="text-amber-600 text-sm mt-1">Try adjusting your search terms</p>
+            </div>
+          )}
+        </div>
+
+        {/* Keep existing modals and dialogs */}
+        <RecipeViewModal
+          recipe={selectedRecipe}
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          onToggleFavorite={handleToggleFavorite}
+        />
+
+        <RecipeEditModal
+          recipe={selectedRecipe}
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedRecipe(null);
+          }}
+          onSave={handleSaveRecipe}
+        />
+
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the recipe
+                "{recipeToDelete?.title}".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteRecipe}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      <RecipeViewModal
-        recipe={selectedRecipe}
-        isOpen={isViewModalOpen}
-        onClose={() => setIsViewModalOpen(false)}
-        onToggleFavorite={handleToggleFavorite}
-      />
-
-      <RecipeEditModal
-        recipe={selectedRecipe}
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedRecipe(null);
-        }}
-        onSave={handleSaveRecipe}
-      />
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the recipe
-              "{recipeToDelete?.title}".
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteRecipe}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </UserLayout>
   );
 } 
