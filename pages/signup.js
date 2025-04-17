@@ -1,4 +1,4 @@
-import { useState } from 'react';
+    import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Eye, EyeOff, Mail, Lock, User, Loader2, ChefHat } from 'lucide-react';
-
+ 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
     name: '',
@@ -57,7 +57,7 @@ export default function SignupPage() {
       {/* Left Side - Image */}
       <div className="hidden lg:block lg:w-1/2 relative">
         <Image
-          src="/images/auth/signup-bg.jpg"
+          src="/st-images/auth/signup.jpg"
           alt="Cooking background"
           fill
           className="object-cover"

@@ -182,7 +182,7 @@ export default function LoginPage() {
       {/* Right Side - Image */}
       <div className="hidden lg:block lg:w-1/2 relative">
         <Image
-          src="/images/auth/login-bg.jpg"
+          src="/st-images/auth/login.jpg"
           alt="Cooking background"
           fill
           className="object-cover"
