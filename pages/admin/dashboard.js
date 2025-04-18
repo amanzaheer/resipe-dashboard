@@ -2,9 +2,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, BookOpen, Star, MessageSquare, LogOut, Clock, ChefHat, User, Key, Image as ImageIcon } from 'lucide-react';
+import { 
+  Users, ChefHat, Star, MessageSquare, TrendingUp, Clock, 
+  Utensils, Coffee, Pizza, User, Key, LogOut, ImageIcon,
+  BookOpen, Heart, ArrowUpRight, Settings
+} from 'lucide-react';
 import { adminAPI } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -113,257 +117,241 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setIsProfileOpen(true)} className="flex items-center gap-2">
-              <User size={18} />
+      <div className="space-y-8 p-6 max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-xl border border-amber-100">
+          <div>
+            <h1 className="text-3xl font-bold text-amber-900">Welcome back, {user?.name}!</h1>
+            <p className="text-amber-700 mt-1">Here's what's cooking in your kitchen today</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsProfileOpen(true)}
+              className="border-amber-200 text-amber-700 hover:bg-amber-50"
+            >
+              <User className="h-4 w-4 mr-2" />
               Profile
             </Button>
-            <Button variant="outline" onClick={() => setIsPasswordOpen(true)} className="flex items-center gap-2">
-              <Key size={18} />
-              Change Password
+            <Button
+              variant="outline"
+              onClick={() => setIsPasswordOpen(true)}
+              className="border-amber-200 text-amber-700 hover:bg-amber-50"
+            >
+              <Key className="h-4 w-4 mr-2" />
+              Password
             </Button>
-            <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
-              <LogOut size={18} />
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="border-amber-200 text-amber-700 hover:bg-amber-50"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users size={24} />
-                Users
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-100">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-blue-900 flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                Total Users
               </CardTitle>
-              <CardDescription>
-                Manage user accounts and permissions
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <p><strong>Total Users:</strong> {stats.totalUsers}</p>
-                <p><strong>Admin Users:</strong> {user.role === 'admin' ? 'Yes' : 'No'}</p>
-                <p><strong>Your Email:</strong> {user.email}</p>
-              </div>
-              <Link href="/admin/users">
-                <Button variant="outline" className="w-full mt-4">
-                  Manage Users
-                </Button>
-              </Link>
+              <div className="text-3xl font-bold text-blue-900">{stats.totalUsers}</div>
+              <p className="text-blue-600 text-sm mt-1">Active members</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen size={24} />
-                Recipes
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-100">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-amber-900 flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-amber-600" />
+                Total Recipes
               </CardTitle>
-              <CardDescription>
-                Manage recipe content
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <p><strong>Total Recipes:</strong> {stats.totalRecipes}</p>
-                {stats.recentRecipes.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="font-medium">Recent Recipes:</p>
-                    {stats.recentRecipes.map((recipe) => (
-                      <div key={recipe._id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-md">
-                        <div className="relative h-12 w-12 flex-shrink-0">
-                          {recipe.image ? (
-                            <Image
-                              src={getImageUrl(recipe.image)}
-                              alt={recipe.title}
-                              fill
-                              className="object-cover rounded-md"
-                              unoptimized
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
-                              <ImageIcon className="h-6 w-6 text-gray-400" />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium">{recipe.title}</p>
-                          <p className="text-sm text-gray-500">
-                            {recipe.preparationTime + recipe.cookingTime} min • {recipe.difficulty}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <Link href="/admin/recipes">
-                <Button variant="outline" className="w-full mt-4">
-                  Manage Recipes
-                </Button>
-              </Link>
+              <div className="text-3xl font-bold text-amber-900">{stats.totalRecipes}</div>
+              <p className="text-amber-600 text-sm mt-1">Published recipes</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star size={24} />
+          <Card className="bg-gradient-to-br from-green-50 to-green-100/50 border-green-100">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-green-900 flex items-center gap-2">
+                <Star className="h-5 w-5 text-green-600" />
                 Reviews
               </CardTitle>
-              <CardDescription>
-                Manage user reviews
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <p><strong>Total Reviews:</strong> {stats.totalReviews}</p>
-                {stats.recentReviews.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="font-medium">Recent Reviews:</p>
-                    {stats.recentReviews.map((review) => (
-                      <div key={review._id} className="p-2 hover:bg-gray-50 rounded-md">
-                        <p className="font-medium">{review.recipe.title}</p>
-                        <p className="text-sm text-gray-500">
-                          Rating: {review.rating}/5 • {new Date(review.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <Link href="/admin/reviews">
-                <Button variant="outline" className="w-full mt-4">
-                  Manage Reviews
-                </Button>
-              </Link>
+              <div className="text-3xl font-bold text-green-900">{stats.totalReviews}</div>
+              <p className="text-green-600 text-sm mt-1">Total feedback</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100/50 border-purple-100">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-purple-900 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-purple-600" />
+                Active Today
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-purple-900">24</div>
+              <p className="text-purple-600 text-sm mt-1">Active users today</p>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Welcome, {user.name}!</CardTitle>
-            <CardDescription>
-              This is your admin dashboard where you can manage the website content and user accounts.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold mb-2">Quick Actions</h3>
-                <div className="space-y-2">
-                  <Link href="/admin/recipes">
-                    <Button variant="outline" className="w-full justify-start">
-                      Manage Recipes
-                    </Button>
-                  </Link>
-                  <Link href="/admin/users">
-                    <Button variant="outline" className="w-full justify-start">
-                      Manage Users
-                    </Button>
-                  </Link>
-                  <Link href="/admin/reviews">
-                    <Button variant="outline" className="w-full justify-start">
-                      Manage Reviews
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold mb-2">Admin Settings</h3>
-                <div className="space-y-2">
-                  <Link href="/admin/categories">
-                    <Button variant="outline" className="w-full justify-start">
-                      Manage Categories
-                    </Button>
-                  </Link>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setIsProfileOpen(true)}>
-                    Edit Profile
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setIsPasswordOpen(true)}>
-                    Change Password
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="border-amber-100">
+            <CardHeader>
+              <CardTitle className="text-amber-900">Quick Actions</CardTitle>
+              <CardDescription>Common administrative tasks</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <Link href="/admin/recipes/new" className="w-full">
+                <Button variant="outline" className="w-full h-24 flex flex-col gap-2 border-amber-200 hover:bg-amber-50">
+                  <ChefHat className="h-6 w-6 text-amber-600" />
+                  <span>Add Recipe</span>
+                </Button>
+              </Link>
+              <Link href="/admin/categories" className="w-full">
+                <Button variant="outline" className="w-full h-24 flex flex-col gap-2 border-amber-200 hover:bg-amber-50">
+                  <Utensils className="h-6 w-6 text-amber-600" />
+                  <span>Categories</span>
+                </Button>
+              </Link>
+              <Link href="/admin/users" className="w-full">
+                <Button variant="outline" className="w-full h-24 flex flex-col gap-2 border-amber-200 hover:bg-amber-50">
+                  <Users className="h-6 w-6 text-amber-600" />
+                  <span>Users</span>
+                </Button>
+              </Link>
+              <Link href="/admin/settings" className="w-full">
+                <Button variant="outline" className="w-full h-24 flex flex-col gap-2 border-amber-200 hover:bg-amber-50">
+                  <Settings className="h-6 w-6 text-amber-600" />
+                  <span>Settings</span>
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
 
-        <Card>
+          <Card className="border-amber-100">
+            <CardHeader>
+              <CardTitle className="text-amber-900">Recent Activity</CardTitle>
+              <CardDescription>Latest updates and changes</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {stats.recentRecipes?.slice(0, 3).map((recipe) => (
+                <div key={recipe._id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-amber-50 transition-all">
+                  <div className="relative h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
+                    {recipe.image ? (
+                      <Image
+                        src={getImageUrl(recipe.image)}
+                        alt={recipe.title}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-amber-100 flex items-center justify-center">
+                        <ImageIcon className="h-6 w-6 text-amber-600" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-amber-900 truncate">{recipe.title}</p>
+                    <p className="text-sm text-amber-600">New recipe added</p>
+                  </div>
+                  <ArrowUpRight className="h-4 w-4 text-amber-600" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Recipes */}
+        <Card className="border-amber-100">
           <CardHeader>
-            <CardTitle>Recent Recipes</CardTitle>
-            <CardDescription>
-              Latest recipes added to the platform
-            </CardDescription>
+            <CardTitle className="text-amber-900">Latest Recipes</CardTitle>
+            <CardDescription>Recently added recipes to the platform</CardDescription>
           </CardHeader>
           <CardContent>
-            {stats.recentRecipes.length === 0 ? (
-              <div className="text-center py-4">No recipes found</div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {stats.recentRecipes.map((recipe) => (
-                  <div key={recipe._id} className="border rounded-lg overflow-hidden">
-                    <div className="relative h-40">
-                      {recipe.image ? (
-                        <Image
-                          src={getImageUrl(recipe.image)}
-                          alt={recipe.title}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                          <ImageIcon className="h-12 w-12 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold mb-2">{recipe.title}</h3>
-                      <div className="flex items-center text-sm text-gray-500 mb-2">
-                        <Clock className="h-4 w-4 mr-1" />
-                        <span>{recipe.preparationTime + recipe.cookingTime} min</span>
-                        <span className="mx-2">•</span>
-                        <ChefHat className="h-4 w-4 mr-1" />
-                        <span>{recipe.difficulty}</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {stats.recentRecipes?.map((recipe) => (
+                <div key={recipe._id} className="group overflow-hidden rounded-xl border border-amber-100 bg-white transition-all hover:shadow-md">
+                  <div className="aspect-video relative overflow-hidden">
+                    {recipe.image ? (
+                      <Image
+                        src={getImageUrl(recipe.image)}
+                        alt={recipe.title}
+                        fill
+                        className="object-cover transition-transform group-hover:scale-105"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-amber-50 flex items-center justify-center">
+                        <ImageIcon className="h-12 w-12 text-amber-200" />
                       </div>
-                      <Link href={`/recipes/${recipe.slug}`}>
-                        <Button variant="outline" className="w-full">
-                          View Recipe
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-medium text-amber-900 line-clamp-1">{recipe.title}</h3>
+                    <div className="mt-2 flex items-center gap-4 text-sm text-amber-600">
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {recipe.preparationTime + recipe.cookingTime} min
+                      </div>
+                      <div className="flex items-center">
+                        <ChefHat className="h-4 w-4 mr-1" />
+                        {recipe.difficulty}
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <Link href={`/admin/recipes/${recipe._id}`}>
+                        <Button variant="outline" size="sm" className="border-amber-200 hover:bg-amber-50">
+                          View Details
                         </Button>
                       </Link>
+                      <div className="flex items-center text-amber-600">
+                        <Heart className="h-4 w-4 mr-1" />
+                        <span className="text-sm">{recipe.favorites?.length || 0}</span>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-            <div className="mt-4 text-center">
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 text-center">
               <Link href="/admin/recipes">
-                <Button>Manage All Recipes</Button>
+                <Button className="bg-amber-600 hover:bg-amber-700 text-white">
+                  View All Recipes
+                </Button>
               </Link>
             </div>
           </CardContent>
         </Card>
+
+        {/* Keep existing dialogs */}
+        <ProfileDialog 
+          open={isProfileOpen} 
+          onOpenChange={setIsProfileOpen}
+          onSuccess={() => {
+            fetchStats();
+          }}
+        />
+
+        <ChangePasswordDialog 
+          open={isPasswordOpen} 
+          onOpenChange={setIsPasswordOpen}
+        />
       </div>
-
-      <ProfileDialog 
-        open={isProfileOpen} 
-        onOpenChange={setIsProfileOpen}
-        onSuccess={() => {
-          // Refresh user data if needed
-          fetchStats();
-        }}
-      />
-
-      <ChangePasswordDialog 
-        open={isPasswordOpen} 
-        onOpenChange={setIsPasswordOpen}
-      />
     </AdminLayout>
   );
 } 

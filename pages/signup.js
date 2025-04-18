@@ -57,7 +57,7 @@ export default function SignupPage() {
       {/* Left Side - Image */}
       <div className="hidden lg:block lg:w-1/2 relative">
         <Image
-          src="/images/auth/signup-bg.jpg"
+          src="/img/food1.jfif"
           alt="Cooking background"
           fill
           className="object-cover"

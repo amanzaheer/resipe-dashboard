@@ -9,14 +9,23 @@ import {
   MessageSquare, 
   LogOut,
   Menu,
-  X
+  X,
+  ChefHat,
+  Settings,
+  Bell,
+  Search,
+  User
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import Image from 'next/image';
 
 export default function AdminLayout({ children }) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -26,90 +35,155 @@ export default function AdminLayout({ children }) {
     }
   }, [user, router]);
 
+  const menuItems = [
+    { 
+      href: '/admin/dashboard', 
+      icon: LayoutDashboard, 
+      label: 'Dashboard',
+      description: 'Overview and statistics'
+    },
+    { 
+      href: '/admin/recipes', 
+      icon: BookOpen, 
+      label: 'Recipes',
+      description: 'Manage all recipes'
+    },
+    { 
+      href: '/admin/users', 
+      icon: Users, 
+      label: 'Users',
+      description: 'User management'
+    },
+    { 
+      href: '/admin/reviews', 
+      icon: MessageSquare, 
+      label: 'Reviews',
+      description: 'Review management'
+    },
+    
+  ];
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="flex items-center justify-center min-h-screen bg-amber-50">
+        <div className="flex flex-col items-center gap-4">
+          <ChefHat className="h-12 w-12 text-amber-600 animate-bounce" />
+          <div className="text-amber-600">Loading admin panel...</div>
+        </div>
       </div>
     );
   }
 
-  const menuItems = [
-    { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/admin/recipes', icon: BookOpen, label: 'Recipes' },
-    { href: '/admin/users', icon: Users, label: 'Users' },
-    { href: '/admin/reviews', icon: MessageSquare, label: 'Reviews' },
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 right-4 z-50">
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-md bg-white shadow-md"
-        >
-          {isMobileMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
-        </button>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-amber-100 z-40">
+        <div className="flex items-center justify-between h-full px-4 lg:px-8">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 hover:bg-amber-50 rounded-lg"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6 text-amber-600" />
+              ) : (
+                <Menu className="h-6 w-6 text-amber-600" />
+              )}
+            </button>
+            <Link href="/admin/dashboard" className="flex items-center gap-2">
+              <ChefHat className="h-8 w-8 text-amber-600" />
+              <span className="text-xl font-bold text-amber-900 hidden md:block">
+                Recipe Admin
+              </span>
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search..."
+                className="pl-9 w-64 border-slate-200"
+              />
+            </div>
+            
+            <button className="relative p-2 hover:bg-amber-50 rounded-lg">
+              <Bell className="h-5 w-5 text-slate-600" />
+              {notifications.length > 0 && (
+                <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden md:block text-right">
+                <div className="text-sm font-medium text-slate-900">{user?.name}</div>
+                <div className="text-xs text-slate-500">Administrator</div>
+              </div>
+              <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
+                <User className="h-5 w-5 text-amber-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+      <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-amber-100 transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="flex flex-col h-full">
-          <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
+        <div className="flex flex-col h-full pt-16">
+          <div className="flex-1 overflow-y-auto px-4 py-6">
+            <nav className="space-y-2">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = router.pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-amber-50 text-amber-900'
+                        : 'text-slate-600 hover:bg-amber-50/50 hover:text-amber-900'
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 ${isActive ? 'text-amber-600' : 'text-slate-400'}`} />
+                    <div>
+                      <div className="font-medium">{item.label}</div>
+                      <div className="text-xs text-slate-500">{item.description}</div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
-          <nav className="flex-1 px-4 space-y-1">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = router.pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                    isActive
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="p-4 border-t">
-            <button
+
+          <div className="p-4 border-t border-amber-100">
+            <Button
               onClick={logout}
-              className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
+              variant="outline"
+              className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
             >
-              <LogOut className="mr-3 h-5 w-5" />
+              <LogOut className="h-4 w-4 mr-2" />
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className={`lg:pl-64 min-h-screen transition-all duration-200 ${
+      {/* Main Content */}
+      <main className={`pt-16 lg:pl-64 min-h-screen transition-all duration-200 ${
         isMobileMenuOpen ? 'pl-64' : 'pl-0'
       }`}>
-        <div className="p-6">
-          {children}
-        </div>
+        {children}
       </main>
 
       {/* Mobile menu overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
