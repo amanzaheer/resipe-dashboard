@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import { recipeAPI, categoryAPI, favoritesAPI } from '@/lib/api';
 import { toast } from 'sonner';
-import { Search, Eye, Heart, Clock, Users, Star, Plus, Pencil, Trash2, BookOpen, ChefHat, Utensils, FileText } from 'lucide-react';
+import { Search, Eye, Heart, Clock, Users, Star, Plus, Pencil, Trash2, BookOpen, ChefHat, Utensils, FileText, Loader2 } from 'lucide-react';
 import RecipeImage from '@/components/user/RecipeImage';
 import RecipeViewModal from '@/components/user/RecipeViewModal';
 import RecipeEditModal from '@/components/user/RecipeEditModal';
@@ -38,6 +38,7 @@ export default function UserRecipesPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState(null);
+  const [loadingFavorites, setLoadingFavorites] = useState({});
 
   // Memoize the fetchData function to prevent unnecessary re-renders
   const fetchData = useCallback(async () => {
@@ -163,22 +164,69 @@ export default function UserRecipesPage() {
 
   const handleToggleFavorite = async (recipe) => {
     try {
+      setLoadingFavorites(prev => ({ ...prev, [recipe._id]: true }));
+      
       if (recipe.isFavorite) {
-        await favoritesAPI.removeFavorite(recipe._id);
+        console.log('Removing favorite:', recipe._id);
+        // Optimistically update UI
         setRecipes(recipes.map(r => 
           r._id === recipe._id ? { ...r, isFavorite: false } : r
         ));
-        toast.success('Recipe removed from favorites');
+        
+        try {
+          await favoritesAPI.removeFavorite(recipe._id);
+          toast.success('Recipe removed from favorites');
+          // Update favorites count
+          setFavorites(prev => prev.filter(fav => 
+            fav.recipe?._id !== recipe._id && fav.recipe !== recipe._id
+          ));
+        } catch (error) {
+          console.error('Error removing favorite:', error);
+          // Revert on error
+          setRecipes(recipes.map(r => 
+            r._id === recipe._id ? { ...r, isFavorite: true } : r
+          ));
+          throw error;
+        }
       } else {
-        await favoritesAPI.addFavorite(recipe._id);
+        console.log('Adding favorite:', recipe._id);
+        // Optimistically update UI
         setRecipes(recipes.map(r => 
           r._id === recipe._id ? { ...r, isFavorite: true } : r
         ));
-        toast.success('Recipe added to favorites');
+        
+        try {
+          const response = await favoritesAPI.addFavorite(recipe._id);
+          toast.success('Recipe added to favorites');
+          // Update favorites count with the correct structure
+          setFavorites(prev => [...prev, { recipe: recipe }]);
+        } catch (error) {
+          console.error('Error adding favorite:', error);
+          // Revert on error
+          setRecipes(recipes.map(r => 
+            r._id === recipe._id ? { ...r, isFavorite: false } : r
+          ));
+          throw error;
+        }
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      toast.error('Failed to update favorites. Please try again later.');
+      console.error('Error response:', error.response?.data);
+      
+      let errorMessage = 'Failed to update favorites';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Favorite endpoint not found. Please check API configuration.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error while updating favorites';
+      } else if (error.response?.status === 400) {
+        errorMessage = 'Invalid request to update favorites';
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setLoadingFavorites(prev => ({ ...prev, [recipe._id]: false }));
     }
   };
 
@@ -414,12 +462,19 @@ export default function UserRecipesPage() {
                         </>
                       )}
                       <Button
-                        variant={recipe.isFavorite ? "ghost" : "ghost"}
-                        size="sm"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleToggleFavorite(recipe)}
-                        className={recipe.isFavorite ? "text-red-600 hover:text-red-700 hover:bg-red-50" : "text-amber-700 hover:text-amber-800 hover:bg-amber-100"}
+                        disabled={loadingFavorites[recipe._id]}
+                        className={`hover:text-red-600 ${recipe.isFavorite ? 'text-red-600' : 'text-gray-400'}`}
                       >
-                        <Heart className="h-4 w-4" fill={recipe.isFavorite ? "currentColor" : "none"} />
+                        {loadingFavorites[recipe._id] ? (
+                          <div className="animate-spin">
+                            <Loader2 className="h-5 w-5" />
+                          </div>
+                        ) : (
+                          <Heart className={`h-5 w-5 ${recipe.isFavorite ? 'fill-current' : ''}`} />
+                        )}
                       </Button>
                     </div>
                   </td>

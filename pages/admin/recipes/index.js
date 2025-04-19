@@ -69,7 +69,7 @@ export default function ManageRecipes() {
       if (response && response.data) {
         const recipeData = response.data.recipes || response.data;
         
-        // Filter out soft-deleted recipes and recipes marked as deleted
+        // Filter out soft-deleted recipes
         const activeRecipes = Array.isArray(recipeData) 
           ? recipeData.filter(recipe => 
               !recipe.isDeleted && 
@@ -78,37 +78,43 @@ export default function ManageRecipes() {
             )
           : [];
         
-        // Fetch categories to map IDs to names
+        // Fetch categories
         try {
           const categoriesResponse = await categoryAPI.getAll();
-          const categoriesMap = {};
           
           if (categoriesResponse && categoriesResponse.data) {
-            const categories = Array.isArray(categoriesResponse.data) 
+            // Update this part to properly handle categories array
+            const categoriesData = Array.isArray(categoriesResponse.data) 
               ? categoriesResponse.data 
               : categoriesResponse.data.categories || [];
-              
-            categories.forEach(category => {
+            
+            // Create categories map and set categories state
+            const categoriesMap = {};
+            categoriesData.forEach(category => {
               categoriesMap[category._id] = category.name;
             });
-          }
-          
-          // Map category IDs to names
-          const recipesWithCategoryNames = activeRecipes.map(recipe => ({
-            ...recipe,
-            categoryName: recipe.category?.name || 
+            
+            // Set categories state with the full categories array
+            setCategories(categoriesData);
+            
+            // Map category names to recipes
+            const recipesWithCategoryNames = activeRecipes.map(recipe => ({
+              ...recipe,
+              categoryName: recipe.category?.name || 
                           (recipe.category && categoriesMap[recipe.category]) || 
                           'Uncategorized'
-          }));
-          
-          setRecipes(recipesWithCategoryNames);
-          setCategories(categories);
+            }));
+            
+            setRecipes(recipesWithCategoryNames);
+          }
         } catch (categoryError) {
           console.error('Error fetching categories:', categoryError);
           setRecipes(activeRecipes);
+          setCategories([]); // Reset categories on error
         }
       } else {
         setRecipes([]);
+        setCategories([]); // Reset categories if no recipe data
       }
       
     } catch (err) {
@@ -144,6 +150,10 @@ export default function ManageRecipes() {
     
     fetchRecipes();
   }, [user, router, fetchRecipes]);
+
+  useEffect(() => {
+    console.log('Categories updated:', categories);
+  }, [categories]);
 
   const handleDelete = async (recipeId) => {
     if (!window.confirm('Are you sure you want to delete this recipe?')) {
@@ -230,23 +240,90 @@ export default function ManageRecipes() {
     <AdminLayout>
       <div className="space-y-8 p-6 max-w-7xl mx-auto">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Recipes</h1>
-          <Button onClick={handleCreateRecipe}>
+          <h1 className="text-2xl font-bold">Recipes Management</h1>
+          <Button onClick={handleCreateRecipe} className="bg-orange-600 hover:bg-orange-700">
             <Plus className="mr-2 h-4 w-4" />
             Add Recipe
           </Button>
         </div>
 
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-100 hover:shadow-md transition-all">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-orange-600">Total Recipes</p>
+                  <p className="text-2xl font-bold text-orange-900">{recipes.length}</p>
+                  <p className="text-sm text-orange-600/60">Active recipes in system</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-orange-100/50 flex items-center justify-center">
+                  <ChefHat className="h-6 w-6 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-100 hover:shadow-md transition-all">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-green-600">Published</p>
+                  <p className="text-2xl font-bold text-green-900">
+                    {recipes.filter(r => r.status === 'published').length}
+                  </p>
+                  <p className="text-sm text-green-600/60">Live on website</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-green-100/50 flex items-center justify-center">
+                  <Eye className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-100 hover:shadow-md transition-all">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-red-600">Categories</p>
+                  <p className="text-2xl font-bold text-red-900">{categories.length}</p>
+                  <p className="text-sm text-red-600/60">Recipe categories</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-red-100/50 flex items-center justify-center">
+                  <Tag className="h-6 w-6 text-red-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-100 hover:shadow-md transition-all">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-purple-600">Total Views</p>
+                  <p className="text-2xl font-bold text-purple-900">
+                    {recipes.reduce((sum, recipe) => sum + (recipe.views || 0), 0)}
+                  </p>
+                  <p className="text-sm text-purple-600/60">Recipe views</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-purple-100/50 flex items-center justify-center">
+                  <Eye className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Enhanced Table Section */}
-        <Card className="border-amber-100">
-          <CardHeader className="flex flex-col md:flex-row gap-4 justify-between">
+        <Card className="border-orange-100">
+          <CardHeader className="flex flex-col md:flex-row gap-4 justify-between bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-orange-400" />
               <Input
                 placeholder="Search recipes..."
                 value={searchTerm}
                 onChange={handleSearch}
-                className="pl-9 border-slate-200 w-full md:max-w-xs"
+                className="pl-9 border-orange-200 w-full md:max-w-xs focus:ring-orange-400"
               />
             </div>
             <div className="flex gap-2">
@@ -254,7 +331,7 @@ export default function ManageRecipes() {
                 value={filterCategory}
                 onValueChange={setFilterCategory}
               >
-                <SelectTrigger className="w-[180px] border-slate-200">
+                <SelectTrigger className="w-[180px] border-orange-200">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
@@ -266,17 +343,11 @@ export default function ManageRecipes() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                onClick={() => setIsAddRecipeOpen(true)}
-                className="bg-amber-600 hover:bg-amber-700 text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Recipe
-              </Button>
+           
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border border-slate-200">
+            <div className="rounded-md border border-orange-200">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -449,32 +520,36 @@ export function AddRecipeDialog({ open, onOpenChange, onSuccess }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] bg-white p-0 overflow-hidden">
-        {/* Enhanced Header with Progress Steps */}
-        <DialogHeader className="p-6 bg-gradient-to-r from-amber-50 via-amber-100/50 to-amber-50 border-b sticky top-0 z-10">
-          <DialogTitle className="text-2xl font-semibold text-amber-900 flex items-center gap-2">
-            <ChefHat className="h-6 w-6 text-amber-600" />
+        <DialogHeader className="p-6 bg-gradient-to-r from-orange-50 via-amber-100/50 to-orange-50 border-b sticky top-0 z-10">
+          <DialogTitle className="text-2xl font-semibold text-orange-900 flex items-center gap-2">
+            <ChefHat className="h-6 w-6 text-orange-600" />
             Create New Recipe
           </DialogTitle>
-          <div className="flex items-center gap-2 mt-4">
-            <div className="flex-1 h-2 rounded-full bg-amber-100 overflow-hidden">
-              <div 
-                className="h-full bg-amber-500 transition-all duration-300"
-                style={{ width: `${formProgress}%` }}
-              />
+          <DialogDescription className="text-orange-600/80 mt-1.5">
+            Fill in the details to create a new delicious recipe
+          </DialogDescription>
+          <div className="flex items-center gap-4 mt-4">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2 text-sm font-medium">
+                <span className="text-orange-700">Recipe Completion</span>
+                <span className="text-orange-600">{formProgress}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-orange-100 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-orange-500 to-amber-600 transition-all duration-300"
+                  style={{ width: `${formProgress}%` }}
+                />
+              </div>
             </div>
-            <span className="text-sm font-medium text-amber-600">
-              {formProgress}% Complete
-            </span>
           </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="relative">
-          {/* Main Content Area */}
           <div className="px-6 py-4 space-y-8 max-h-[calc(100vh-200px)] overflow-y-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Left Column - Enhanced Basic Info */}
+              {/* Left Column */}
               <div className="space-y-6">
-                <div className="bg-amber-50/50 rounded-lg p-6 space-y-4">
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-6 space-y-4 border border-orange-100">
                   <h3 className="text-lg font-medium text-amber-900 flex items-center gap-2">
                     <Utensils className="h-5 w-5 text-amber-600" />
                     Basic Information
@@ -551,8 +626,7 @@ export function AddRecipeDialog({ open, onOpenChange, onSuccess }) {
                   </div>
                 </div>
 
-                {/* Enhanced Image Upload Section */}
-                <div className="bg-blue-50/50 rounded-lg p-6 space-y-4">
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-6 space-y-4 border border-blue-100">
                   <h3 className="text-lg font-medium text-blue-900 flex items-center gap-2">
                     <ImageIcon className="h-5 w-5 text-blue-600" />
                     Recipe Image
@@ -600,10 +674,9 @@ export function AddRecipeDialog({ open, onOpenChange, onSuccess }) {
                 </div>
               </div>
 
-              {/* Right Column - Enhanced Ingredients & Instructions */}
+              {/* Right Column */}
               <div className="space-y-6">
-                {/* Enhanced Ingredients Section */}
-                <div className="bg-green-50/50 rounded-lg p-6 space-y-4">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 space-y-4 border border-green-100">
                   <h3 className="text-lg font-medium text-green-900 flex items-center gap-2">
                     <List className="h-5 w-5 text-green-600" />
                     Ingredients
@@ -648,8 +721,7 @@ export function AddRecipeDialog({ open, onOpenChange, onSuccess }) {
                   </div>
                 </div>
 
-                {/* Enhanced Instructions Section */}
-                <div className="bg-purple-50/50 rounded-lg p-6 space-y-4">
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg p-6 space-y-4 border border-purple-100">
                   <h3 className="text-lg font-medium text-purple-900 flex items-center gap-2">
                     <ListOrdered className="h-5 w-5 text-purple-600" />
                     Instructions
@@ -664,8 +736,7 @@ export function AddRecipeDialog({ open, onOpenChange, onSuccess }) {
             </div>
           </div>
 
-          {/* Enhanced Footer */}
-          <DialogFooter className="p-6 border-t border-slate-200 bg-white sticky bottom-0 z-10">
+          <DialogFooter className="p-6 border-t border-orange-100 bg-gradient-to-b from-white to-orange-50/30 sticky bottom-0 z-10">
             <div className="flex gap-2 w-full">
               <Button
                 type="button"
@@ -674,7 +745,7 @@ export function AddRecipeDialog({ open, onOpenChange, onSuccess }) {
                   resetForm();
                   onOpenChange(false);
                 }}
-                className="flex-1 border-slate-200"
+                className="flex-1 border-orange-200 hover:bg-orange-50"
               >
                 Cancel
               </Button>
@@ -684,7 +755,7 @@ export function AddRecipeDialog({ open, onOpenChange, onSuccess }) {
                 className={`flex-1 ${
                   formProgress < 100
                     ? 'bg-slate-400'
-                    : 'bg-amber-600 hover:bg-amber-700'
+                    : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700'
                 } text-white transition-colors`}
               >
                 {loading ? (

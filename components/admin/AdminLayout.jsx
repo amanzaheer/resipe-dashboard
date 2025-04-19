@@ -14,7 +14,9 @@ import {
   Settings,
   Bell,
   Search,
-  User
+  User,
+  LucideSquareSigma,
+
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,6 +61,12 @@ export default function AdminLayout({ children }) {
       icon: MessageSquare, 
       label: 'Reviews',
       description: 'Review management'
+    },
+    { 
+      href: '/admin/categories', 
+      icon:LucideSquareSigma      , 
+      label: 'Categories',
+      description: ' Manage all categories'
     },
     
   ];
