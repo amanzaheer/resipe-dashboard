@@ -1,17 +1,39 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/router';
-import { useAuth } from '@/contexts/AuthContext';
-import UserLayout from '@/components/layout/UserLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { recipeAPI, categoryAPI, favoritesAPI } from '@/lib/api';
-import { toast } from 'sonner';
-import { Search, Eye, Heart, Clock, Users, Star, Plus, Pencil, Trash2, BookOpen, ChefHat, Utensils, FileText, Loader2 } from 'lucide-react';
-import RecipeImage from '@/components/user/RecipeImage';
-import RecipeViewModal from '@/components/user/RecipeViewModal';
-import RecipeEditModal from '@/components/user/RecipeEditModal';
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/router";
+import { useAuth } from "@/contexts/AuthContext";
+import UserLayout from "@/components/layout/UserLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { recipeAPI, categoryAPI, favoritesAPI } from "@/lib/api";
+import { toast } from "sonner";
+import {
+  Search,
+  Eye,
+  Heart,
+  Clock,
+  Users,
+  Star,
+  Plus,
+  Pencil,
+  Trash2,
+  BookOpen,
+  ChefHat,
+  Utensils,
+  FileText,
+  Loader2,
+} from "lucide-react";
+import RecipeImage from "@/components/user/RecipeImage";
+import RecipeViewModal from "@/components/user/RecipeViewModal";
+import RecipeEditModal from "@/components/user/RecipeEditModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +54,7 @@ export default function UserRecipesPage() {
   const [categories, setCategories] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -46,70 +68,64 @@ export default function UserRecipesPage() {
       setLoading(true);
       setError(null);
 
-      // Fetch recipes
-      const recipesResponse = await recipeAPI.getAll();
-      
+      // Fetch recipes and favorites in parallel
+      const [recipesResponse, favoritesResponse] = await Promise.all([
+        recipeAPI.getAll(),
+        favoritesAPI.getAll(),
+      ]);
+
       let recipesData = [];
-      
       if (recipesResponse?.data) {
-        // Handle different response structures
         if (Array.isArray(recipesResponse.data)) {
           recipesData = recipesResponse.data;
-        } else if (recipesResponse.data.recipes && Array.isArray(recipesResponse.data.recipes)) {
+        } else if (
+          recipesResponse.data.recipes &&
+          Array.isArray(recipesResponse.data.recipes)
+        ) {
           recipesData = recipesResponse.data.recipes;
-        } else if (typeof recipesResponse.data === 'object') {
+        } else if (typeof recipesResponse.data === "object") {
           recipesData = Object.values(recipesResponse.data);
         }
       }
-      
-      // Filter out soft-deleted recipes
-      const activeRecipes = recipesData.filter(recipe => 
-        !recipe.isDeleted && 
-        recipe.status !== 'deleted' && 
-        !recipe.deletedAt
+
+      // Get favorites data and ensure it's an array
+      const favoritesData = Array.isArray(favoritesResponse?.data)
+        ? favoritesResponse.data
+        : [];
+
+      // Create a Set of favorited recipe IDs for faster lookup
+      const favoritedRecipeIds = new Set(
+        favoritesData
+          .map(
+            (fav) =>
+              fav.recipe?._id || fav.recipe?.id || fav.recipeId || fav._id
+          )
+          .filter(Boolean)
       );
-      
+
+      // Filter active recipes and add favorite status
+      const activeRecipesWithFavorites = recipesData
+        .filter(
+          (recipe) =>
+            !recipe.isDeleted &&
+            recipe.status !== "deleted" &&
+            !recipe.deletedAt
+        )
+        .map((recipe) => ({
+          ...recipe,
+          isFavorite: favoritedRecipeIds.has(recipe._id),
+        }));
+
+      setRecipes(activeRecipesWithFavorites);
+      setFavorites(favoritesData);
+
       // Fetch categories
       const categoriesResponse = await categoryAPI.getAll();
-      const categoriesData = categoriesResponse?.data || [];
-      
-      // Create categories map for easy lookup
-      const categoriesMap = {};
-      categoriesData.forEach(category => {
-        categoriesMap[category._id || category.id] = category.name;
-      });
-      
-      // Add category names to recipes
-      const recipesWithCategories = activeRecipes.map(recipe => ({
-        ...recipe,
-        categoryName: recipe.category?.name || 
-                     (recipe.category && categoriesMap[recipe.category]) || 
-                     'Uncategorized',
-        categoryId: recipe.category?._id || recipe.category
-      }));
-      
-      // Fetch favorites
-      const favoritesResponse = await favoritesAPI.getAll();
-      const favoritesData = favoritesResponse?.data || [];
-      
-      // Mark recipes as favorites
-      const recipesWithFavorites = recipesWithCategories.map(recipe => ({
-        ...recipe,
-        isFavorite: favoritesData.some(fav => 
-          fav.recipe?._id === recipe._id || 
-          fav.recipe?.id === recipe.id || 
-          fav.recipeId === recipe._id || 
-          fav.recipeId === recipe.id
-        )
-      }));
-
-      setRecipes(recipesWithFavorites);
-      setCategories(categoriesData);
-      setFavorites(favoritesData);
+      setCategories(categoriesResponse?.data || []);
     } catch (error) {
-      console.error('Error fetching data:', error);
-      setError('Failed to fetch data. Please try again later.');
-      toast.error('Failed to fetch data');
+      console.error("Error fetching data:", error);
+      setError("Failed to fetch data. Please try again later.");
+      toast.error("Failed to fetch data");
     } finally {
       setLoading(false);
     }
@@ -117,18 +133,18 @@ export default function UserRecipesPage() {
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
-    
+
     // Check if token exists
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
-      toast.error('Authentication required. Please log in again.');
-      router.push('/login');
+      toast.error("Authentication required. Please log in again.");
+      router.push("/login");
       return;
     }
-    
+
     fetchData();
   }, [isAuthenticated, router, fetchData]);
 
@@ -149,85 +165,27 @@ export default function UserRecipesPage() {
 
   const confirmDeleteRecipe = async () => {
     if (!recipeToDelete) return;
-    
+
     try {
       await recipeAPI.delete(recipeToDelete._id);
-      setRecipes(recipes.filter(recipe => recipe._id !== recipeToDelete._id));
-      toast.success('Recipe deleted successfully');
+      setRecipes(recipes.filter((recipe) => recipe._id !== recipeToDelete._id));
+      toast.success("Recipe deleted successfully");
       setIsDeleteDialogOpen(false);
       setRecipeToDelete(null);
     } catch (error) {
-      console.error('Error deleting recipe:', error);
-      toast.error('Failed to delete recipe. Please try again later.');
+      console.error("Error deleting recipe:", error);
+      toast.error("Failed to delete recipe. Please try again later.");
     }
   };
 
-  const handleToggleFavorite = async (recipe) => {
-    try {
-      setLoadingFavorites(prev => ({ ...prev, [recipe._id]: true }));
-      
-      if (recipe.isFavorite) {
-        console.log('Removing favorite:', recipe._id);
-        // Optimistically update UI
-        setRecipes(recipes.map(r => 
-          r._id === recipe._id ? { ...r, isFavorite: false } : r
-        ));
-        
-        try {
-          await favoritesAPI.removeFavorite(recipe._id);
-          toast.success('Recipe removed from favorites');
-          // Update favorites count
-          setFavorites(prev => prev.filter(fav => 
-            fav.recipe?._id !== recipe._id && fav.recipe !== recipe._id
-          ));
-        } catch (error) {
-          console.error('Error removing favorite:', error);
-          // Revert on error
-          setRecipes(recipes.map(r => 
-            r._id === recipe._id ? { ...r, isFavorite: true } : r
-          ));
-          throw error;
-        }
-      } else {
-        console.log('Adding favorite:', recipe._id);
-        // Optimistically update UI
-        setRecipes(recipes.map(r => 
-          r._id === recipe._id ? { ...r, isFavorite: true } : r
-        ));
-        
-        try {
-          const response = await favoritesAPI.addFavorite(recipe._id);
-          toast.success('Recipe added to favorites');
-          // Update favorites count with the correct structure
-          setFavorites(prev => [...prev, { recipe: recipe }]);
-        } catch (error) {
-          console.error('Error adding favorite:', error);
-          // Revert on error
-          setRecipes(recipes.map(r => 
-            r._id === recipe._id ? { ...r, isFavorite: false } : r
-          ));
-          throw error;
-        }
-      }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      console.error('Error response:', error.response?.data);
-      
-      let errorMessage = 'Failed to update favorites';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.status === 404) {
-        errorMessage = 'Favorite endpoint not found. Please check API configuration.';
-      } else if (error.response?.status === 500) {
-        errorMessage = 'Server error while updating favorites';
-      } else if (error.response?.status === 400) {
-        errorMessage = 'Invalid request to update favorites';
-      }
-      
-      toast.error(errorMessage);
-    } finally {
-      setLoadingFavorites(prev => ({ ...prev, [recipe._id]: false }));
-    }
+  const handleToggleFavorite = async (recipeId) => {
+    setRecipes(prevRecipes => 
+      prevRecipes.map(recipe => 
+        recipe._id === recipeId 
+          ? { ...recipe, isFavorite: !recipe.isFavorite }
+          : recipe
+      )
+    );
   };
 
   const handleCreateRecipe = () => {
@@ -241,15 +199,17 @@ export default function UserRecipesPage() {
 
   // Memoize the filtered recipes to prevent unnecessary re-renders
   const filteredRecipes = useMemo(() => {
-    return recipes.filter(recipe => 
-      recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (recipe.description && recipe.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    return recipes.filter(
+      (recipe) =>
+        recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (recipe.description &&
+          recipe.description.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [recipes, searchTerm]);
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/placeholder-recipe.jpg';
-    if (imagePath.startsWith('http')) return imagePath;
+    if (!imagePath) return "/placeholder-recipe.jpg";
+    if (imagePath.startsWith("http")) return imagePath;
     return `${process.env.NEXT_PUBLIC_API_URL}${imagePath}`;
   };
 
@@ -313,7 +273,9 @@ export default function UserRecipesPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-amber-900">My Recipes</h1>
-            <p className="text-amber-600 mt-1">Manage and organize your culinary creations</p>
+            <p className="text-amber-600 mt-1">
+              Manage and organize your culinary creations
+            </p>
           </div>
           <div className="flex gap-3">
             <Button
@@ -323,9 +285,9 @@ export default function UserRecipesPage() {
               <Plus className="h-4 w-4 mr-2" />
               New Recipe
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => router.push('/dashboard')}
+            <Button
+              variant="outline"
+              onClick={() => router.push("/dashboard")}
               className="border-amber-200 text-amber-700 hover:bg-amber-50"
             >
               Back to Dashboard
@@ -343,11 +305,15 @@ export default function UserRecipesPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-amber-900">{recipes.length}</div>
-              <p className="text-amber-600 text-sm mt-1">recipes in your collection</p>
+              <div className="text-3xl font-bold text-amber-900">
+                {recipes.length}
+              </div>
+              <p className="text-amber-600 text-sm mt-1">
+                recipes in your collection
+              </p>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-none shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-amber-900 font-medium flex items-center gap-2">
@@ -356,7 +322,9 @@ export default function UserRecipesPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-amber-900">{categories.length}</div>
+              <div className="text-3xl font-bold text-amber-900">
+                {categories.length}
+              </div>
               <p className="text-amber-600 text-sm mt-1">recipe categories</p>
             </CardContent>
           </Card>
@@ -369,7 +337,9 @@ export default function UserRecipesPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-amber-900">{favorites.length}</div>
+              <div className="text-3xl font-bold text-amber-900">
+                {favorites.length}
+              </div>
               <p className="text-amber-600 text-sm mt-1">favorite recipes</p>
             </CardContent>
           </Card>
@@ -391,28 +361,48 @@ export default function UserRecipesPage() {
           <table className="min-w-full divide-y divide-amber-200">
             <thead className="bg-amber-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">Image</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">Recipe Details</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">Info</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-amber-800 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">
+                  Image
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">
+                  Recipe Details
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">
+                  Category
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-amber-800 uppercase tracking-wider">
+                  Info
+                </th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-amber-800 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-amber-100">
               {filteredRecipes.map((recipe) => (
-                <tr key={recipe._id} className="hover:bg-amber-50/50 transition-colors">
+                <tr
+                  key={recipe._id}
+                  className="hover:bg-amber-50/50 transition-colors"
+                >
                   <td className="px-6 py-4">
                     <div className="h-20 w-20 rounded-lg overflow-hidden">
-                      <RecipeImage image={recipe.image} className="h-full w-full object-cover" />
+                      <RecipeImage
+                        image={recipe.image}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-base font-medium text-amber-900 mb-1">{recipe.title}</div>
-                    <div className="text-sm text-amber-600 line-clamp-2">{recipe.description}</div>
+                    <div className="text-base font-medium text-amber-900 mb-1">
+                      {recipe.title}
+                    </div>
+                    <div className="text-sm text-amber-600 line-clamp-2">
+                      {recipe.description}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">
-                      {recipe.categoryName || 'Uncategorized'}
+                      {recipe.categoryName || "Uncategorized"}
                     </Badge>
                   </td>
                   <td className="px-6 py-4">
@@ -427,7 +417,7 @@ export default function UserRecipesPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Star className="h-4 w-4 text-amber-400" />
-                        <span>{recipe.rating?.toFixed(1) || 'No ratings'}</span>
+                        <span>{recipe.rating?.toFixed(1) || "No ratings"}</span>
                       </div>
                     </div>
                   </td>
@@ -464,16 +454,22 @@ export default function UserRecipesPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleToggleFavorite(recipe)}
+                        onClick={() => handleToggleFavorite(recipe._id)}
                         disabled={loadingFavorites[recipe._id]}
-                        className={`hover:text-red-600 ${recipe.isFavorite ? 'text-red-600' : 'text-gray-400'}`}
+                        className={`hover:text-red-600 ${
+                          recipe.isFavorite ? "text-red-600" : "text-gray-400"
+                        }`}
                       >
                         {loadingFavorites[recipe._id] ? (
                           <div className="animate-spin">
                             <Loader2 className="h-5 w-5" />
                           </div>
                         ) : (
-                          <Heart className={`h-5 w-5 ${recipe.isFavorite ? 'fill-current' : ''}`} />
+                          <Heart
+                            className={`h-5 w-5 ${
+                              recipe.isFavorite ? "fill-current" : ""
+                            }`}
+                          />
                         )}
                       </Button>
                     </div>
@@ -487,7 +483,9 @@ export default function UserRecipesPage() {
             <div className="text-center py-12 bg-amber-50/50">
               <Utensils className="h-12 w-12 text-amber-300 mx-auto mb-3" />
               <p className="text-amber-800 font-medium">No recipes found</p>
-              <p className="text-amber-600 text-sm mt-1">Try adjusting your search terms</p>
+              <p className="text-amber-600 text-sm mt-1">
+                Try adjusting your search terms
+              </p>
             </div>
           )}
         </div>
@@ -510,22 +508,27 @@ export default function UserRecipesPage() {
           onSave={handleSaveRecipe}
         />
 
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the recipe
-                "{recipeToDelete?.title}".
+                This action cannot be undone. This will permanently delete the
+                recipe "{recipeToDelete?.title}".
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDeleteRecipe}>Delete</AlertDialogAction>
+              <AlertDialogAction onClick={confirmDeleteRecipe}>
+                Delete
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       </div>
     </UserLayout>
   );
-} 
+}
